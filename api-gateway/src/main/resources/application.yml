@@ -1,0 +1,28 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**,/api/usuarios/**,/api/distritos/**
+        - id: catalogo-service
+          uri: ${CATALOGO_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/categorias/**,/api/unidades/**,/api/catalogo/**,/api/mis-productos/**
+        - id: pedido-service
+          uri: ${PEDIDO_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/carrito/**,/api/compras/**,/api/pedidos/**,/api/reportes/**,/api/notificaciones/**
+# Las rutas /internal/** no se enrutan: solo los servicios se hablan entre sí por la red interna.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

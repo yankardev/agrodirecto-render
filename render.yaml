@@ -1,0 +1,112 @@
+services:
+  - type: web
+    name: agrodirecto-auth-yc2026
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: MODULE
+        value: auth-service
+      - key: SPRING_PROFILES_ACTIVE
+        value: h2
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:+UseSerialGC -Dfile.encoding=UTF-8
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INTERNAL_KEY
+        generateValue: true
+      - key: CATALOGO_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-catalogo-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: agrodirecto-catalogo-yc2026
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: MODULE
+        value: catalogo-service
+      - key: SPRING_PROFILES_ACTIVE
+        value: h2
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:+UseSerialGC -Dfile.encoding=UTF-8
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: JWT_SECRET
+      - key: INTERNAL_KEY
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: INTERNAL_KEY
+      - key: AUTH_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: agrodirecto-pedido-yc2026
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: MODULE
+        value: pedido-service
+      - key: SPRING_PROFILES_ACTIVE
+        value: h2
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:+UseSerialGC -Dfile.encoding=UTF-8
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: JWT_SECRET
+      - key: INTERNAL_KEY
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: INTERNAL_KEY
+      - key: CATALOGO_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-catalogo-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: agrodirecto-gateway-yc2026
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: MODULE
+        value: api-gateway
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:+UseSerialGC -Dfile.encoding=UTF-8
+      - key: AUTH_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-auth-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: CATALOGO_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-catalogo-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: PEDIDO_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: agrodirecto-pedido-yc2026
+          envVarKey: RENDER_EXTERNAL_HOSTNAME

@@ -1,0 +1,74 @@
+# Levanta TODO el sistema:  docker compose up --build
+# Abrir http://localhost:8080  (solo el gateway se publica; los servicios quedan en la red interna)
+x-servicio: &servicio
+  restart: unless-stopped
+  depends_on:
+    db-init:
+      condition: service_completed_successfully
+  environment: &env-comun
+    DB_USER: agro_user
+    DB_PASSWORD: Agro_2026_Pass1
+    JWT_SECRET: ${JWT_SECRET:-agrodirecto-secreto-de-desarrollo-cambiar-en-produccion-2026}
+    INTERNAL_KEY: ${INTERNAL_KEY:-clave-interna-entre-servicios-solo-desarrollo}
+    AUTH_URL: http://auth-service:8081
+    CATALOGO_URL: http://catalogo-service:8082
+    PEDIDO_URL: http://pedido-service:8083
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Agro_Sa_2026x
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Agro_Sa_2026x -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./database:/init:ro
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "sqlserver", "-U", "sa", "-P", "Agro_Sa_2026x", "-i", "/init/00_crear_bases.sql"]
+
+  auth-service:
+    <<: *servicio
+    build: { context: ., args: { MODULE: auth-service } }
+    environment:
+      <<: *env-comun
+      DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=AgroAuthDB;encrypt=true;trustServerCertificate=true
+
+  catalogo-service:
+    <<: *servicio
+    build: { context: ., args: { MODULE: catalogo-service } }
+    environment:
+      <<: *env-comun
+      DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=AgroCatalogoDB;encrypt=true;trustServerCertificate=true
+
+  pedido-service:
+    <<: *servicio
+    build: { context: ., args: { MODULE: pedido-service } }
+    environment:
+      <<: *env-comun
+      DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=AgroPedidoDB;encrypt=true;trustServerCertificate=true
+
+  api-gateway:
+    <<: *servicio
+    build: { context: ., args: { MODULE: api-gateway } }
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - catalogo-service
+      - pedido-service
+
+volumes:
+  sqldata:

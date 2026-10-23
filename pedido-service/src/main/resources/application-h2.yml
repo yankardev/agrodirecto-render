@@ -1,0 +1,8 @@
+# Perfil "h2": base en memoria, para probar sin instalar SQL Server.
+# Ejecutar con:  -Dspring.profiles.active=h2
+spring:
+  datasource:
+    url: jdbc:h2:mem:pedidodb;MODE=MSSQLServer;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver

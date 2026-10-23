@@ -1,0 +1,16 @@
+# Imagen parametrizable para los 4 servicios en Render.
+# Render convierte las variables de entorno del servicio en build args.
+FROM maven:3.9-eclipse-temurin-17 AS build
+ARG MODULE
+WORKDIR /app
+COPY . .
+RUN mvn -B -q -pl ${MODULE} -am package -DskipTests
+
+FROM eclipse-temurin:17-jre
+ARG MODULE
+WORKDIR /app
+COPY --from=build /app/${MODULE}/target/${MODULE}-1.0.0.jar /app/app.jar
+COPY render-entrypoint.sh /app/render-entrypoint.sh
+RUN chmod +x /app/render-entrypoint.sh && useradd --system --no-create-home agro
+USER agro
+ENTRYPOINT ["/app/render-entrypoint.sh"]

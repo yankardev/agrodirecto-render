@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Compilar y ejecutar pruebas (usa H2, no requiere SQL Server)
+        run: mvn -B verify
+      - name: Guardar reportes de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-surefire
+          path: '**/target/surefire-reports/*.xml'
+
+  docker-build:
+    needs: build-test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modulo: [auth-service, catalogo-service, pedido-service, api-gateway]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen Docker de ${{ matrix.modulo }}
+        run: docker build --build-arg MODULE=${{ matrix.modulo }} -t agrodirecto/${{ matrix.modulo }}:${{ github.sha }} .

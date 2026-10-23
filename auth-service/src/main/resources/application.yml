@@ -1,0 +1,32 @@
+server:
+  port: ${PORT:8081}
+
+spring:
+  application:
+    name: auth-service
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=AgroAuthDB;encrypt=true;trustServerCertificate=true}
+    username: ${DB_USER:agro_user}
+    password: ${DB_PASSWORD:Agro_2026_Pass1}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:agrodirecto-secreto-de-desarrollo-cambiar-en-produccion-2026}
+    expiracion-minutos: 240
+  internal-key: ${INTERNAL_KEY:clave-interna-entre-servicios-solo-desarrollo}
+
+services:
+  catalogo:
+    url: ${CATALOGO_URL:http://localhost:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
